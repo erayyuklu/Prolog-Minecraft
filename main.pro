@@ -147,6 +147,45 @@ find_nearest_food_type(Objects, Agent, FoodTypes, Coordinates, FoodType, Distanc
     FoodType = ObjectType.
 
 % 7- move_to_coordinate(+State, +AgentId, +X, +Y, -ActionList, +DepthLimit)
+move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit) :-
+    State = [Agents, _, _, _],
+    get_dict(AgentId, Agents, Agent),
+    get_agent_from_position_(CurrentX, CurrentY, Agents, Agent),
+    display("in hereeee"),nl,
+    helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY),!.
+    
+
+helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY) :-
+    DepthLimit > -1,
+     State = [Agents, _, _, _],
+    get_dict(AgentId, Agents, Agent),
+    get_dict(subtype, Agent, SubtypeA),
+    get_dict(type, Agent, TypeA),
+    
+    (
+        (CurrentX = TargetX, CurrentY = TargetY) ->
+        ActionList = [] % Agent already at the target coordinates
+        ;
+        NewDepthLimit is DepthLimit - 1,
+        display("CurrentX: "), display(CurrentX), nl,
+        display("CurrentY: "), display(CurrentY), nl,
+        display(SubtypeA), nl,
+        
+        (   
+            (Action = move_up, NewY is CurrentY - 1, NewX is CurrentX, can_move(SubtypeA, move_up), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_down, NewY is CurrentY + 1, NewX is CurrentX, can_move(SubtypeA, move_down), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_left, NewX is CurrentX - 1, NewY is CurrentY, can_move(SubtypeA, move_left), \+ is_occupied(TypeA,AgentId, NewX, NewY, Agents));
+            (Action = move_right, NewX is CurrentX + 1, NewY is CurrentY, can_move(SubtypeA, move_right), \+ is_occupied(TypeA,AgentId, NewX, NewY, Agents));
+            (Action = move_up_right, NewX is CurrentX + 1, NewY is CurrentY - 1, can_move(SubtypeA, move_up_right), \+ is_occupied(TypeA,AgentId, NewX, NewY, Agents));
+            (Action = move_up_left, NewX is CurrentX - 1, NewY is CurrentY - 1, can_move(SubtypeA, move_up_left), \+ is_occupied(TypeA,AgentId, NewX, NewY, Agents));
+            (Action = move_down_right, NewX is CurrentX + 1, NewY is CurrentY + 1, can_move(SubtypeA, move_down_right), \+ is_occupied(TypeA,AgentId, NewX, NewY, Agents));
+            (Action = move_down_left, NewX is CurrentX - 1, NewY is CurrentY + 1, can_move(SubtypeA, move_down_left), \+ is_occupied(TypeA,AgentId, NewX, NewY, Agents))
+        ),
+        
+        helper_move_to_coordinate(State, AgentId, TargetX, TargetY, RestOfActions, NewDepthLimit, NewX, NewY),
+        
+        ActionList = [Action | RestOfActions]
+    ),!.
 
 % 8- move_to_nearest_food(+State, +AgentId, -ActionList, +DepthLimit)
 
