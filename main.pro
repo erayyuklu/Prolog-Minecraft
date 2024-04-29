@@ -151,7 +151,7 @@ move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit) :-
     State = [Agents, _, _, _],
     get_dict(AgentId, Agents, Agent),
     get_agent_from_position_(CurrentX, CurrentY, Agents, Agent),
-    display("in hereeee"),nl,
+    
     helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY),!.
     
 
@@ -167,10 +167,7 @@ helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLim
         ActionList = [] % Agent already at the target coordinates
         ;
         NewDepthLimit is DepthLimit - 1,
-        display("CurrentX: "), display(CurrentX), nl,
-        display("CurrentY: "), display(CurrentY), nl,
-        display(SubtypeA), nl,
-        
+       
         (   
             (Action = move_up, NewY is CurrentY - 1, NewX is CurrentX, can_move(SubtypeA, move_up), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
             (Action = move_down, NewY is CurrentY + 1, NewX is CurrentX, can_move(SubtypeA, move_down), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
