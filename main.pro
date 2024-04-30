@@ -185,6 +185,9 @@ helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLim
     ),!.
 
 % 8- move_to_nearest_food(+State, +AgentId, -ActionList, +DepthLimit)
+move_to_nearest_food(State, AgentId, ActionList, DepthLimit) :-
+    find_nearest_food(State, AgentId, [TargetX, TargetY], _, _),
+    move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit). 
 
 % 9- consume_all(+State, +AgentId, -NumberOfMoves, -Value, NumberOfChildren +DepthLimit)
 
