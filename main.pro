@@ -130,7 +130,7 @@ find_nearest_animal(Agents, Agent, Animal1, Animal2, Coordinates, FoodType, Dist
     ), Distances),
     findMin(Distances, [Distance, X, Y, OtherAgent]),
     Coordinates = [X, Y],
-    FoodType = Animal.
+    get_dict(subtype, OtherAgent, FoodType).
 
 find_nearest_food_type(Objects, Agent, FoodTypes, Coordinates, FoodType, Distance) :-
     findall([Dist, X, Y, ObjectType], (
@@ -144,8 +144,8 @@ find_nearest_food_type(Objects, Agent, FoodTypes, Coordinates, FoodType, Distanc
     ), Distances),
     findMin(Distances, [Distance, X, Y, ObjectType]),
     Coordinates = [X, Y],
-    FoodType = ObjectType.
-
+    get_dict(_, Objects, Object),
+    get_dict(subtype, Object, FoodType).    
 % 7- move_to_coordinate(+State, +AgentId, +X, +Y, -ActionList, +DepthLimit)
 move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit) :-
     State = [Agents, _, _, _],
@@ -190,5 +190,7 @@ move_to_nearest_food(State, AgentId, ActionList, DepthLimit) :-
     move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit). 
 
 % 9- consume_all(+State, +AgentId, -NumberOfMoves, -Value, NumberOfChildren +DepthLimit)
+
+
 
 
