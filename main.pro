@@ -1,4 +1,4 @@
-% eray yüklü
+% eray yuklu
 % 2021400273
 % compiling: yes
 % complete: no
