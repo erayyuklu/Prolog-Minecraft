@@ -359,7 +359,7 @@ fill_map([[X,Y,Type]|L],[A,S],[An,Sn],Id_object, Id_agent, Na, No):-
     fill_map(L,[An_,Sn_],[An,Sn],Id_object_, Id_agent_, Na, No),!.
 
 read_file(Objects,[X,Y]):-
-    open('smallfarm.txt', read, File),
+    open('farm.txt', read, File),
     read_lines(File, Objects, -1,[X,Y]),
     close(File).
 
