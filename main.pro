@@ -297,7 +297,7 @@ consume_all(State, AgentId, NumberOfMoves, Value, NumberOfChildren, DepthLimit):
     consume_all_helper(State, AgentId, 0, DepthLimit,  ConsumableFoods, NumberOfMoves, Value, NumberOfChildren),!.
 
 % Base case: When there are no more consumable foods left to eat
-consume_all_helper(State, AgentId, TotalMoves, DepthLimit, [], TotalMoves, Value, NumberOfChildren) :- %return the total moves and the value of the farm
+consume_all_helper(State, AgentId, TotalMoves, _, [], TotalMoves, Value, NumberOfChildren) :- %return the total moves and the value of the farm
     State = [Agents, _, _, _],
     get_dict(AgentId, Agents, Agent),
     get_dict(children, Agent, NumberOfChildren),
@@ -305,9 +305,11 @@ consume_all_helper(State, AgentId, TotalMoves, DepthLimit, [], TotalMoves, Value
 
 consume_all_helper(State, AgentId, TotalMoves, DepthLimit,FoodCoordinates, NumberOfMoves, Value, NumberOfChildren):-
     FoodCoordinates = [[_, [X, Y]]| RemainingFoods ],
+   
     
     (
         move_to_coordinate(State, AgentId, X, Y, ActionList, DepthLimit) -> % if there is a valid move to the food coordinates do these:
+            
             make_series_of_actions(ActionList, State, AgentId, NewState),
             print_state(NewState),
             % Increment the totalMoves by the length of the actionList
@@ -324,11 +326,7 @@ consume_all_helper(State, AgentId, TotalMoves, DepthLimit,FoodCoordinates, Numbe
             consume_all_helper(NewState2, AgentId, NewTotalMoves, DepthLimit, ConsumableFoods, NumberOfMoves, Value, NumberOfChildren) %continue consuming the foods
         ;
         % No valid moves left
-       
-        State = [Agents, _, _, _],
-        get_dict(AgentId, Agents, Agent),
-        get_dict(children, Agent, NumberOfChildren),
-        value_of_farm(State, Value),
+        
         consume_all_helper(State, AgentId, TotalMoves, DepthLimit, RemainingFoods, NumberOfMoves, Value, NumberOfChildren), %continue consuming the foods
      
        
