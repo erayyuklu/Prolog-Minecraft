@@ -311,12 +311,12 @@ consume_all_helper(State, AgentId, TotalMoves, DepthLimit,FoodCoordinates, Numbe
         move_to_coordinate(State, AgentId, X, Y, ActionList, DepthLimit) -> % if there is a valid move to the food coordinates do these:
             
             make_series_of_actions(ActionList, State, AgentId, NewState),
-            print_state(NewState),
+            
             % Increment the totalMoves by the length of the actionList
             mylength(ActionList, ActionListLength),
             NewTotalMoves is TotalMoves + ActionListLength,
             eat(NewState, AgentId, NewState2),
-            print_state(NewState2),
+            
             % Find consumable foods in the new state
             
             (find_consumable_foods(NewState2, AgentId, ConsumableFoods) -> true; ConsumableFoods = []), %if there is no consumable food left, set ConsumableFoods to an empty list
