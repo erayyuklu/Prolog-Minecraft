@@ -1,7 +1,7 @@
 % eray yuklu
 % 2021400273
 % compiling: yes
-% complete: no
+% complete: yes
 
 
 :- ['cmpefarm.pro'].
@@ -156,17 +156,38 @@ find_nearest_food_type(Objects, Agent, FoodTypes, Coordinates, FoodType, Distanc
     get_dict(_, Objects, Object),
     get_dict(subtype, Object, FoodType).    
 % 7- move_to_coordinate(+State, +AgentId, +X, +Y, -ActionList, +DepthLimit)
-move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit) :- %get the agents dictionary from the state and determine the actions to move the agent to the target coordinates
+move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit) :- 
+    % (is_occupied(TypeA, AgentId, TargetX, TargetY, Agents) -> false; true), %check if the target coordinates are occupied
+    main_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit), %using main_move to cut backtracking when the agent reaches the target coordinates
+    %if actionlist is empty, return false
+    (ActionList = [] -> false; true).
+main_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit) :- 
     State = [Agents, _, _, _],
     get_dict(AgentId, Agents, Agent),
     get_agent_from_position_(CurrentX, CurrentY, Agents, Agent),
-    
-    helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY),!.
-    
+    move_helper(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY, 1),!.
 
-helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY) :- 
+move_helper(_, _, _, _, [], DepthLimit, _, _, CurrentDepth) :- 
+    CurrentDepth > DepthLimit, !. % Stop if depth limit exceeded
+
+move_helper(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY, CurrentDepth) :-
+    CurrentDepth =< DepthLimit,
+    (helper_move_to_coordinate(State, AgentId, TargetX, TargetY, PartialActionList, CurrentDepth, CurrentX, CurrentY) ->
+        (PartialActionList = [] -> % Check if PartialActionList is empty
+            CurrentDepthNew is CurrentDepth + 1,
+            move_helper(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY, CurrentDepthNew)
+        ; % Otherwise, assign PartialActionList to ActionList
+            ActionList = PartialActionList
+        )
+    ;
+        % If helper_move_to_coordinate fails, proceed to the next depth level
+        CurrentDepthNew is CurrentDepth + 1,
+        move_helper(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY, CurrentDepthNew)
+    ).
+
+helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit, CurrentX, CurrentY) :-
     DepthLimit > -1,
-     State = [Agents, _, _, _],
+    State = [Agents, _, _, _],
     get_dict(AgentId, Agents, Agent),
     get_dict(subtype, Agent, SubtypeA),
     get_dict(type, Agent, TypeA),
@@ -174,46 +195,154 @@ helper_move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLim
     (
         (CurrentX = TargetX, CurrentY = TargetY) ->
         ActionList = [] % Agent already at the target coordinates
-        ;
-        NewDepthLimit is DepthLimit - 1, 
+    ;
+        NewDepthLimit is DepthLimit - 1,
        
-        (   
-            (Action = move_up, NewY is CurrentY - 1, NewX is CurrentX, can_move(SubtypeA, move_up), \+ is_occupied_mine(TypeA, AgentId, NewX, NewY, Agents));
-            (Action = move_down, NewY is CurrentY + 1, NewX is CurrentX, can_move(SubtypeA, move_down), \+ is_occupied_mine(TypeA, AgentId, NewX, NewY, Agents));
-            (Action = move_left, NewX is CurrentX - 1, NewY is CurrentY, can_move(SubtypeA, move_left), \+ is_occupied_mine(TypeA,AgentId, NewX, NewY, Agents));
-            (Action = move_right, NewX is CurrentX + 1, NewY is CurrentY, can_move(SubtypeA, move_right), \+ is_occupied_mine(TypeA,AgentId, NewX, NewY, Agents));
-            (Action = move_up_right, NewX is CurrentX + 1, NewY is CurrentY - 1, can_move(SubtypeA, move_up_right), \+ is_occupied_mine(TypeA,AgentId, NewX, NewY, Agents));
-            (Action = move_up_left, NewX is CurrentX - 1, NewY is CurrentY - 1, can_move(SubtypeA, move_up_left), \+ is_occupied_mine(TypeA,AgentId, NewX, NewY, Agents));
-            (Action = move_down_right, NewX is CurrentX + 1, NewY is CurrentY + 1, can_move(SubtypeA, move_down_right), \+ is_occupied_mine(TypeA,AgentId, NewX, NewY, Agents));
-            (Action = move_down_left, NewX is CurrentX - 1, NewY is CurrentY + 1, can_move(SubtypeA, move_down_left), \+ is_occupied_mine(TypeA,AgentId, NewX, NewY, Agents))
+        (
+            (Action = move_up, NewY is CurrentY - 1, NewX is CurrentX, can_move(SubtypeA, move_up), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_down, NewY is CurrentY + 1, NewX is CurrentX, can_move(SubtypeA, move_down), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_left, NewX is CurrentX - 1, NewY is CurrentY, can_move(SubtypeA, move_left), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_right, NewX is CurrentX + 1, NewY is CurrentY, can_move(SubtypeA, move_right), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_up_right, NewX is CurrentX + 1, NewY is CurrentY - 1, can_move(SubtypeA, move_up_right), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_up_left, NewX is CurrentX - 1, NewY is CurrentY - 1, can_move(SubtypeA, move_up_left), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_down_right, NewX is CurrentX + 1, NewY is CurrentY + 1, can_move(SubtypeA, move_down_right), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents));
+            (Action = move_down_left, NewX is CurrentX - 1, NewY is CurrentY + 1, can_move(SubtypeA, move_down_left), \+ is_occupied(TypeA, AgentId, NewX, NewY, Agents))
         ),
         
-        helper_move_to_coordinate(State, AgentId, TargetX, TargetY, RestOfActions, NewDepthLimit, NewX, NewY), %recursive call to find the rest of the actions
+        helper_move_to_coordinate(State, AgentId, TargetX, TargetY, RestOfActions, NewDepthLimit, NewX, NewY),
         
-        ActionList = [Action | RestOfActions] %append the current action to the rest of the actions
-    ),!.
-
-
-is_occupied_mine(herbivore, AgentId, X, Y, Agents):- %check if the given coordinates are occupied by an agent or the coordinates are out of bounds
-    width(Width), height(Height),
-    (
-        (X < 1; Y < 1; X >= Width-1; Y >= Height-1);
-        (get_dict(Id, Agents, Agent), Id \= AgentId, Agent.x = X, Agent.y = Y)
+        ActionList = [Action | RestOfActions]
     ).
 
-is_occupied_mine(carnivore, AgentId, X, Y, Agents):- %check if the given coordinates are occupied by a carnivore or the coordinates are out of bounds
-    width(Width), height(Height),
-    (
-        (X < 1; Y < 1; X >= Width-1; Y >= Height-1);
-        (get_dict(Id, Agents, Agent), Id \= AgentId, Agent.x = X, Agent.y = Y, Agent.type=carnivore)
-    ).
 % 8- move_to_nearest_food(+State, +AgentId, -ActionList, +DepthLimit)
 move_to_nearest_food(State, AgentId, ActionList, DepthLimit) :- %get the nearest food coordinates and move the agent to the food
     find_nearest_food(State, AgentId, [TargetX, TargetY], _, _),
     move_to_coordinate(State, AgentId, TargetX, TargetY, ActionList, DepthLimit). 
 
 % 9- consume_all(+State, +AgentId, -NumberOfMoves, -Value, NumberOfChildren +DepthLimit)
+find_consumable_foods(State, AgentId, ConsumableFoods) :-
+    find_nearest_food(State, AgentId, _, _, _), % To ensure the state is consistent
+    State = [Agents, Objects, _, _],
+    get_dict(AgentId, Agents, Agent),
+    get_dict(subtype, Agent, Subtype),
+    (
+        Subtype = wolf ->
+            find_consumable_animals(Agents, Agent, cow, chicken, ConsumableFoods)
+        ; Subtype = cow ->
+            find_consumable_food_types(Objects, Agent, [grass, grain], ConsumableFoods)
+        ; Subtype = chicken ->
+            find_consumable_food_types(Objects, Agent, [grain, corn], ConsumableFoods)
+    ),!.
 
+find_consumable_animals(Agents, Agent, Animal1, Animal2, ConsumableFoods) :- %find the consumable animals
+    findall([Distance, FoodType, [X, Y]], (
+        member(Animal, [Animal1, Animal2]),
+        get_dict(_, Agents, OtherAgent),
+        Animal \= subtype,
+        get_dict(subtype, OtherAgent, Animal),
+        get_dict(x, OtherAgent, X),
+        get_dict(y, OtherAgent, Y),
+        Distance is abs(X - Agent.x) + abs(Y - Agent.y),
+        get_dict(subtype, OtherAgent, FoodType)
+    ), AllFoods),
+    mysort(AllFoods, SortedFoods), %sort the foods
+    extract_coordinates(SortedFoods, ConsumableFoods). 
+
+find_consumable_food_types(Objects, Agent, FoodTypes, ConsumableFoods) :- %find the consumable food types
+    findall([Distance, FoodType, [X, Y]], (
+        member(FoodType, FoodTypes),
+        get_dict(_, Objects, Object),
+        FoodType \= subtype,
+        get_dict(subtype, Object, FoodType),
+        get_dict(x, Object, X),
+        get_dict(y, Object, Y),
+        Distance is abs(X - Agent.x) + abs(Y - Agent.y)
+    ), AllFoods),
+    mysort(AllFoods, SortedFoods),
+    extract_coordinates(SortedFoods, ConsumableFoods).
+
+extract_coordinates([], []). 
+extract_coordinates([[_, FoodType, Coordinates]|Rest], [[FoodType, Coordinates]|Remaining]) :- %extract the coordinates of the consumable foods
+    extract_coordinates(Rest, Remaining).
+
+mysort(List, Sorted) :-
+    quicksort(List, Sorted).
+
+quicksort([], []).
+quicksort([X|Xs], Sorted) :- %sort the list using quicksort
+    partition(Xs, X, Left, Right),
+    quicksort(Left, SortedLeft),
+    quicksort(Right, SortedRight),
+    myappend(SortedLeft, [X|SortedRight], Sorted).
+
+partition([], _, [], []).
+partition([Y|Ys], Pivot, [Y|Left], Right) :-
+    Y = [D1,_,_],
+    Pivot = [D2,_,_],
+    D1 =< D2,
+    partition(Ys, Pivot, Left, Right).
+partition([Y|Ys], Pivot, Left, [Y|Right]) :-
+    Y = [D1,_,_],
+    Pivot = [D2,_,_],
+    D1 > D2,
+    partition(Ys, Pivot, Left, Right).
+
+myappend([], L, L).
+myappend([H|T], L2, [H|Result]) :- %append the lists
+    myappend(T, L2, Result).
+
+
+consume_all(State, AgentId, NumberOfMoves, Value, NumberOfChildren, DepthLimit):- %consume all the consumable foods
+    find_consumable_foods(State, AgentId, ConsumableFoods),
+    consume_all_helper(State, AgentId, 0, DepthLimit,  ConsumableFoods, NumberOfMoves, Value, NumberOfChildren),!.
+
+% Base case: When there are no more consumable foods left to eat
+consume_all_helper(State, AgentId, TotalMoves, DepthLimit, [], TotalMoves, Value, NumberOfChildren) :- %return the total moves and the value of the farm
+    State = [Agents, _, _, _],
+    get_dict(AgentId, Agents, Agent),
+    get_dict(children, Agent, NumberOfChildren),
+    value_of_farm(State, Value).
+
+consume_all_helper(State, AgentId, TotalMoves, DepthLimit,FoodCoordinates, NumberOfMoves, Value, NumberOfChildren):-
+    FoodCoordinates = [[_, [X, Y]]| RemainingFoods ],
+    
+    (
+        move_to_coordinate(State, AgentId, X, Y, ActionList, DepthLimit) -> % if there is a valid move to the food coordinates do these:
+            make_series_of_actions(ActionList, State, AgentId, NewState),
+            print_state(NewState),
+            % Increment the totalMoves by the length of the actionList
+            mylength(ActionList, ActionListLength),
+            NewTotalMoves is TotalMoves + ActionListLength,
+            eat(NewState, AgentId, NewState2),
+            print_state(NewState2),
+            % Find consumable foods in the new state
+            
+            (find_consumable_foods(NewState2, AgentId, ConsumableFoods) -> true; ConsumableFoods = []), %if there is no consumable food left, set ConsumableFoods to an empty list
+            % Update the current moves
+            % Recursive call
+            
+            consume_all_helper(NewState2, AgentId, NewTotalMoves, DepthLimit, ConsumableFoods, NumberOfMoves, Value, NumberOfChildren) %continue consuming the foods
+        ;
+        % No valid moves left
+       
+        State = [Agents, _, _, _],
+        get_dict(AgentId, Agents, Agent),
+        get_dict(children, Agent, NumberOfChildren),
+        value_of_farm(State, Value),
+        consume_all_helper(State, AgentId, TotalMoves, DepthLimit, RemainingFoods, NumberOfMoves, Value, NumberOfChildren), %continue consuming the foods
+     
+       
+       
+        true
+    ).
+
+% Base case: When the list is empty, the length is 0
+mylength([], 0).
+
+% Recursive case: Increment the count and recurse on the tail of the list
+mylength([_|Tail], Length) :- %calculate the length of the list
+    mylength(Tail, TailLength),
+    Length is TailLength + 1.
 
 
 
